@@ -49,7 +49,10 @@ def get_stock_data(stock_name, normalize=True, ma=[]):
     flipped_high = df['High'].iloc[::-1]
     df["Low_Mov"] = flipped_low.rolling(5, 1).min()
     df["High_Mov"] = flipped_high.rolling(5, 1).max()
-    df.to_csv("data.csv")
+    df["Signal"] = ""
+    df.loc[df["Low_Mov"] == df["Low"], "Signal"] = "BUY"
+    df.loc[df["High_Mov"] == df["High"], "Signal"] = "SELL"
+    df.to_csv("data2.csv")
     df.dropna(inplace=True)
 
     # Moving Average
