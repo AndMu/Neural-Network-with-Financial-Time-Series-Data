@@ -1,14 +1,21 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+from datetime import datetime, date, timedelta
+
 import backtrader as bt
 import pandas as pd
+import backtrader.analyzers as btanalyzers
+
+daysOffset = 10
+last_date = date.today() - + timedelta(days=daysOffset)
 
 
-class TestStrategy(bt.Strategy):
+class MySimpleStrategy(bt.Strategy):
 
     params = (
         ('signal_file', ''),
+        ('security', ''),
     )
 
     def __init__(self):
@@ -24,6 +31,7 @@ class TestStrategy(bt.Strategy):
         # Simply log the closing price of the series from the reference
         # self.log('Close, %.2f' % self.dataclose[0])
         # self.sell()
+        position = self.getpositionbyname(self.params.security).size
         date = self.datas[0].datetime.date(0)
         filtered = self.df[self.df["date"] == date]
         if len(filtered) == 0:
@@ -31,24 +39,38 @@ class TestStrategy(bt.Strategy):
         actual_signal = filtered.iloc[0]["Signal"]
         if pd.isnull(actual_signal):
             return
-        if actual_signal.lower() == "buy":
-            self.buy()
-        elif actual_signal.lower() == "sell":
-            self.sell()
+        if actual_signal.lower() == "buy" and position == 0:
+            self.buy(size=400)
+        elif actual_signal.lower() == "sell" and position > 0:
+            self.sell(size=position)
 
 
 if __name__ == '__main__':
     cerebro = bt.Cerebro()
 
     # Add a strategy
-    cerebro.addstrategy(TestStrategy, signal_file='data2.csv')
+    cerebro.addstrategy(MySimpleStrategy, signal_file='data2.csv', security="AMD")
 
     cerebro.broker.setcash(10000.0)
     print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
-    data = bt.feeds.Quandl(dataname='AMD', apikey='XH28RzhxDVHKWwnaN1Hv')
+    data = bt.feeds.Quandl(
+        dataname='AMD',
+        apikey='XH28RzhxDVHKWwnaN1Hv',
+        fromdate=datetime(2017, 1, 1),
+        todate=last_date)
     cerebro.adddata(data)
-    cerebro.run()
+
+    cerebro.addwriter(bt.WriterFile, csv=True, out='your_strategy_results.csv')
+
+    # Analyzer
+    cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='mysharpe')
+
+    thestrats = cerebro.run()
     print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+
+    thestrat = thestrats[0]
+    print('Sharpe Ratio:', thestrat.analyzers.mysharpe.get_analysis())
+
     cerebro.plot()
 
