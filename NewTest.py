@@ -7,7 +7,7 @@ from keras import callbacks
 from pandas import datetime
 import math, time
 import itertools
-from sklearn import preprocessing
+from sklearn import preprocessing, metrics
 from keras.utils import np_utils
 import datetime
 from sklearn.metrics import mean_squared_error
@@ -30,6 +30,8 @@ dropout = 0.3
 decay = 0.5
 epochs = 90
 stock_name = 'AMD'
+TRAIN_BATCH = 2000
+TEST_BATCH = 1000
 
 
 def set_signals(df):
@@ -147,20 +149,41 @@ def build_model(shape, neurons, dropout, decay):
     model.summary()
     return model
 
+
+def make_single_dimension(y):
+    y = np.copy(y)
+    if len(y.shape) > 1 and y.shape[1] > 1:
+        y_value = np.argmax(y, axis=1)
+    else:
+        y[y > 0.5] = 1
+        y[y < 0.5] = 0
+        y_value = y.astype(int)
+        if len(y.shape) > 1 and y.shape[1] == 1:
+            y_value = y_value[:, 0]
+
+    return y_value
+
+
 def model_score(model, X_train, y_train, X_test, y_test):
-    trainScore = model.evaluate(X_train, y_train, verbose=0)
+    trainScore = model.evaluate(X_train, y_train, batch_size=TEST_BATCH, verbose=0)
     print('Train Score: %.5f MSE (%.2f RMSE)' % (trainScore[0], math.sqrt(trainScore[0])))
 
-    testScore = model.evaluate(X_test, y_test, verbose=0)
+    testScore = model.evaluate(X_test, y_test, batch_size=TEST_BATCH, verbose=0)
     print('Test Score: %.5f MSE (%.2f RMSE)' % (testScore[0], math.sqrt(testScore[0])))
+
+    result_y = model.predict(X_test, batch_size=TEST_BATCH, verbose=1)
+    result_y = make_single_dimension(result_y)
+    y_test = make_single_dimension(y_test)
+    vacc = metrics.accuracy_score(y_test, result_y)
+    report = metrics.classification_report(y_test, result_y)
+    print('Accuracy: %f' % vacc)
+    print(report)
     return trainScore[0], testScore[0]
 
 df = get_stock_data(stock_name, ma=[50, 100, 200])
-train_df = df.loc[df.index < '2017-01-01']
+train_df = df.loc[df.index < '2017-01-01', :].copy()
 train_df = set_signals(train_df)
 # train_df.to_csv("data2.csv")
-test_df = df.loc[df.index > '2017-01-01']
-test_df = set_signals(test_df)
 
 X_train, y_train, X_test, y_test = load_data(train_df, seq_len)
 
@@ -173,7 +196,7 @@ cbks = [callbacks.EarlyStopping(monitor='val_loss', patience=3)]
 model.fit(
     X_train,
     y_train,
-    batch_size=800,
+    batch_size=TRAIN_BATCH,
     callbacks=cbks,
     epochs=epochs,
     validation_split=0.2,
@@ -183,6 +206,17 @@ model.fit(
 model.save_weights("trained.h5")
 model_score(model, X_train, y_train, X_test, y_test)
 
+test_df = df.loc[df.index >= '2017-01-01', :].copy()
+test_df = set_signals(test_df)
+
 X_train, y_train, X_test, y_test = load_data(test_df, seq_len)
-result_y_prob1 = model.predict_proba(X_train, batch_size=800, verbose=1)
-result_y_prob2 = model.predict_proba(X_test, batch_size=800, verbose=1)
+result_y_prob1 = model.predict_proba(X_train, batch_size=TEST_BATCH, verbose=1)
+result_y_prob2 = model.predict_proba(X_test, batch_size=TEST_BATCH, verbose=1)
+
+zeros = np.zeros((seq_len + 1, result_y_prob2.shape[1]))
+x = np.vstack((result_y_prob1, result_y_prob2, zeros))
+for i in range(0, result_y_prob2.shape[1]):
+    test_df["Result-" + str(i)] = x[:, i]
+
+test_df.to_csv("result.csv")
+
