@@ -70,8 +70,8 @@ test_df = df.loc[df.index >= '2017-01-01', :].copy()
 test_df = set_signals(test_df)
 
 X_train, y_train, X_test, y_test = DataProcessing.load_data(test_df, seq_len)
-result_y_prob1 = model.predict_proba(X_train, batch_size=Constants.TEST_BATCH, verbose=1)
-result_y_prob2 = model.predict_proba(X_test, batch_size=Constants.TEST_BATCH, verbose=1)
+result_y_prob1 = model.model.predict_proba(X_train, batch_size=Constants.TEST_BATCH, verbose=1)
+result_y_prob2 = model.model.predict_proba(X_test, batch_size=Constants.TEST_BATCH, verbose=1)
 
 zeros = np.zeros((seq_len + 1, result_y_prob2.shape[1]))
 x = np.vstack((result_y_prob1, result_y_prob2, zeros))

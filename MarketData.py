@@ -7,21 +7,10 @@ class MarketData(object):
 
     @staticmethod
     def get_stock_data(stock_name, normalize=True, ma=[]):
-        """
-        Return a dataframe of that stock and normalize all the values.
-        (Optional: create moving average)
-        """
-        df = quandl.get_table('WIKI/PRICES', ticker=stock_name)
-        df.drop(['ticker', 'open', 'high', 'low', 'close', 'ex-dividend', 'volume', 'split_ratio'], 1, inplace=True)
-        df.set_index('date', inplace=True)
 
-        # Renaming all the columns so that we can use the old version code
-        df.rename(columns={'adj_open': 'Open', 'adj_high': 'High', 'adj_low': 'Low', 'adj_volume': 'Volume',
-                           'adj_close': 'Adj Close'}, inplace=True)
-
+        df = MarketData.get_stock_data_basic(stock_name)
         # Percentage change
         df['Pct'] = df['Adj Close'].pct_change()
-        df.dropna(inplace=True)
 
         # Moving Average
         if ma != []:
@@ -51,10 +40,23 @@ class MarketData(object):
 
     @staticmethod
     def denormalize(stock_name, normalized_value):
+
+        df = MarketData.get_stock_data_basic(stock_name)
+        df = df['Adj Close'].values.reshape(-1, 1)
+        normalized_value = normalized_value.reshape(-1, 1)
+
+        # return df.shape, p.shape
+        min_max_scaler = preprocessing.MinMaxScaler()
+        min_max_scaler.fit_transform(df)
+        new = min_max_scaler.inverse_transform(normalized_value)
+        return new
+
+    @staticmethod
+    def get_stock_data_basic(stock_name):
         """
-        Return a dataframe of that stock and normalize all the values.
-        (Optional: create moving average)
-        """
+                Return a dataframe of that stock and normalize all the values.
+                (Optional: create moving average)
+                """
         df = quandl.get_table('WIKI/PRICES', ticker=stock_name)
         df.drop(['ticker', 'open', 'high', 'low', 'close', 'ex-dividend', 'volume', 'split_ratio'], 1, inplace=True)
         df.set_index('date', inplace=True)
@@ -64,12 +66,4 @@ class MarketData(object):
                            'adj_close': 'Adj Close'}, inplace=True)
 
         df.dropna(inplace=True)
-        df = df['Adj Close'].values.reshape(-1, 1)
-        normalized_value = normalized_value.reshape(-1, 1)
-
-        # return df.shape, p.shape
-        min_max_scaler = preprocessing.MinMaxScaler()
-        a = min_max_scaler.fit_transform(df)
-        new = min_max_scaler.inverse_transform(normalized_value)
-
-        return new
+        return df

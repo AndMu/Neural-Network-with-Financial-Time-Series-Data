@@ -56,8 +56,8 @@ class PredictionModel(object):
         print('Test Score: %.5f MSE (%.2f RMSE)' % (testScore[0], math.sqrt(testScore[0])))
         return trainScore[0], testScore[0]
 
-    def model_score_class(self, model, X_test, y_test):
-        result_y = model.predict(X_test, batch_size=Constants.TEST_BATCH, verbose=1)
+    def model_score_class(self, X_test, y_test):
+        result_y = self.model.predict(X_test, batch_size=Constants.TEST_BATCH, verbose=1)
         result_y = DataProcessing.make_single_dimension(result_y)
         y_test = DataProcessing.make_single_dimension(y_test)
         vacc = metrics.accuracy_score(y_test, result_y)
