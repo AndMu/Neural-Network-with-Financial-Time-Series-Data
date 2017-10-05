@@ -8,7 +8,6 @@ from DataProcessing import DataProcessing
 from PredictionModel import PredictionModel
 
 sns.set()
-from keras import callbacks
 from keras.utils import np_utils
 
 import quandl
@@ -45,8 +44,6 @@ def set_signals(df):
     df.drop(labels=['Adj Close'], axis=1, inplace=True)
     df = pd.concat([df, signal], axis=1)
     return df
-
-
 
 
 df = MarketData.get_stock_data(stock_name, ma=[50, 100, 200])

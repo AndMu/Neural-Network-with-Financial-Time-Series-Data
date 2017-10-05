@@ -1,5 +1,6 @@
 import math
-
+import numpy as np
+from numpy import newaxis
 from keras import callbacks
 from keras.optimizers import RMSprop
 from keras.models import Sequential
@@ -36,10 +37,10 @@ class PredictionModel(object):
         model.summary()
         self.model = model
 
-    def fit(self, X_train, y_train):
+    def fit(self, x_train, y_train):
         cbks = [callbacks.EarlyStopping(monitor='val_loss', patience=3)]
         self.model.fit(
-            X_train,
+            x_train,
             y_train,
             batch_size=Constants.TRAIN_BATCH,
             callbacks=cbks,
@@ -48,16 +49,34 @@ class PredictionModel(object):
             verbose=1,
             shuffle=True)
 
-    def model_score(self, X_train, y_train, X_test, y_test):
-        trainScore = self.model.evaluate(X_train, y_train, batch_size=Constants.TEST_BATCH, verbose=0)
+    def predict_point_by_point(self, data):
+        # Predict each timestep given the last sequence of true data, in effect only predicting 1 step ahead each time
+        predicted = self.model.predict(data)
+        predicted = np.reshape(predicted, (predicted.size,))
+        return predicted
+
+    def predict_sequence_full(self, data, window_size):
+        # Shift the window by 1 new prediction each time, re-run predictions on new window
+        curr_frame = data[0]
+        predicted = []
+        for i in range(len(data)):
+            if i % 100 == 0:
+                print("Processed %i" % i)
+            predicted.append(self.model.predict(curr_frame[newaxis, :, :])[0, 0])
+            curr_frame = curr_frame[1:]
+            curr_frame = np.insert(curr_frame, [window_size - 1], predicted[-1], axis=0)
+        return np.array(predicted)
+
+    def model_score(self, x_train, y_train, x_test, y_test):
+        trainScore = self.model.evaluate(x_train, y_train, batch_size=Constants.TEST_BATCH, verbose=0)
         print('Train Score: %.5f MSE (%.2f RMSE)' % (trainScore[0], math.sqrt(trainScore[0])))
 
-        testScore = self.model.evaluate(X_test, y_test, batch_size=Constants.TEST_BATCH, verbose=0)
+        testScore = self.model.evaluate(x_test, y_test, batch_size=Constants.TEST_BATCH, verbose=0)
         print('Test Score: %.5f MSE (%.2f RMSE)' % (testScore[0], math.sqrt(testScore[0])))
         return trainScore[0], testScore[0]
 
-    def model_score_class(self, X_test, y_test):
-        result_y = self.model.predict(X_test, batch_size=Constants.TEST_BATCH, verbose=1)
+    def model_score_class(self, x_test, y_test):
+        result_y = self.model.predict(x_test, batch_size=Constants.TEST_BATCH, verbose=1)
         result_y = DataProcessing.make_single_dimension(result_y)
         y_test = DataProcessing.make_single_dimension(y_test)
         vacc = metrics.accuracy_score(y_test, result_y)
@@ -65,10 +84,10 @@ class PredictionModel(object):
         print('Accuracy: %f' % vacc)
         print(report)
 
-    def percentage_difference(self, X_test, y_test):
+    def percentage_difference(self, x_test, y_test):
         percentage_diff = []
 
-        p = self.model.predict(X_test)
+        p = self.model.predict(x_test)
         for u in range(len(y_test)):  # for each data index in test data
             pr = p[u][0]  # pr = prediction on day u
 

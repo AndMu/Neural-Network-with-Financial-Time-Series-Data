@@ -30,7 +30,11 @@ model = PredictionModel(shape, neurons, dropout, decay)
 
 model.fit(X_train, y_train)
 
+model.model.save_weights("trained_reg.h5")
+
 model.model_score(X_train, y_train, X_test, y_test)
 
 p = model.percentage_difference(X_test, y_test)
-PlotManager.plot_result(stock_name, p, y_test)
+predicted = model.predict_sequence_full(X_test, 20)
+PlotManager.plot_results_multiple(predicted, y_test, 50)
+# PlotManager.plot_result(stock_name, predicted, y_test)

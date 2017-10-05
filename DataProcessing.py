@@ -19,16 +19,16 @@ class DataProcessing(object):
         print ("Amount of testing data = {}".format(0.1 * result.shape[0]))
 
         train = result[:int(row), :]  # 90% date
-        X_train = train[:, :-1]  # all data until day m
+        x_train = train[:, :-1]  # all data until day m
         y_train = train[:, -1][:, -1]  # day m + 1 adjusted close price
 
-        X_test = result[int(row):, :-1]
+        x_test = result[int(row):, :-1]
         y_test = result[int(row):, -1][:, -1]
 
-        X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], amount_of_features))
-        X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], amount_of_features))
+        x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], amount_of_features))
+        x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], amount_of_features))
 
-        return [X_train, y_train, X_test, y_test]
+        return [x_train, y_train, x_test, y_test]
 
     @staticmethod
     def make_single_dimension(y):
