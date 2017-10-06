@@ -49,23 +49,10 @@ class PredictionModel(object):
             verbose=1,
             shuffle=True)
 
-    def predict_point_by_point(self, data):
-        # Predict each timestep given the last sequence of true data, in effect only predicting 1 step ahead each time
-        predicted = self.model.predict(data)
-        predicted = np.reshape(predicted, (predicted.size,))
-        return predicted
-
-    def predict_sequence_full(self, data, window_size):
+    def predict_index(self, data, index):
         # Shift the window by 1 new prediction each time, re-run predictions on new window
-        curr_frame = data[0]
-        predicted = []
-        for i in range(len(data)):
-            if i % 100 == 0:
-                print("Processed %i" % i)
-            predicted.append(self.model.predict(curr_frame[newaxis, :, :])[0, 0])
-            curr_frame = curr_frame[1:]
-            curr_frame = np.insert(curr_frame, [window_size - 1], predicted[-1], axis=0)
-        return np.array(predicted)
+        curr_frame = data[index]
+        return self.model.predict(curr_frame[newaxis, :, :])[0, 0]
 
     def model_score(self, x_train, y_train, x_test, y_test):
         trainScore = self.model.evaluate(x_train, y_train, batch_size=Constants.TEST_BATCH, verbose=0)

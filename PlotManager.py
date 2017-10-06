@@ -17,15 +17,15 @@ class PlotManager(object):
         plt.show()
 
     @staticmethod
-    def plot_result(stock_name, normalized_value_p, normalized_value_y_test):
-        newp = MarketData.denormalize(stock_name, normalized_value_p)
-        newy_test = MarketData.denormalize(stock_name, normalized_value_y_test)
+    def plot_result(data, normalized_value_p, normalized_value_y_test):
+        newp = data.denormalize('Adj Close', normalized_value_p)
+        newy_test = data.denormalize('Adj Close', normalized_value_y_test)
         print("Last five days price:", newy_test[-5:])
         print("Last five days prediction + future:", newp[-6:])
         plt2.plot(newp, color='red', label='Prediction')
         plt2.plot(newy_test, color='blue', label='Actual')
         plt2.legend(loc='best')
-        plt2.title('The test result for {}'.format(stock_name))
+        plt2.title('The test result for {}'.format(data.stock_name))
         plt2.xlabel('Days')
         plt2.ylabel('Adjusted Close')
         plt2.show()

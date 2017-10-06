@@ -14,21 +14,13 @@ class DataProcessing(object):
             result.append(data[index: index + sequence_length])  # index : index + 22days
 
         result = np.array(result)
-        row = round(0.8 * result.shape[0])  # 80% split
-        print ("Amount of training data = {}".format(0.9 * result.shape[0]))
-        print ("Amount of testing data = {}".format(0.1 * result.shape[0]))
+        print ("Amount of data = {}".format(result.shape[0]))
 
-        train = result[:int(row), :]  # 90% date
-        x_train = train[:, :-1]  # all data until day m
-        y_train = train[:, -1][:, -1]  # day m + 1 adjusted close price
+        x = result[:, :-1]  # all data until day m
+        y = result[:, -1][:, -1]  # day m + 1 adjusted close price
 
-        x_test = result[int(row):, :-1]
-        y_test = result[int(row):, -1][:, -1]
-
-        x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], amount_of_features))
-        x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], amount_of_features))
-
-        return [x_train, y_train, x_test, y_test]
+        x_train = np.reshape(x, (x.shape[0], x.shape[1], amount_of_features))
+        return [x_train, y]
 
     @staticmethod
     def make_single_dimension(y):
