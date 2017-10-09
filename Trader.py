@@ -4,23 +4,27 @@ from __future__ import (absolute_import, division, print_function,
 from datetime import datetime, date, timedelta
 
 import backtrader as bt
-import pandas as pd
 import backtrader.analyzers as btanalyzers
+
+from MarketData import MarketDataSource, MarketData
+from PredictionModel import PredictionModelFactory
 
 daysOffset = 10
 last_date = date.today() - + timedelta(days=daysOffset)
+seq_len = 21
 
 
 class MySimpleStrategy(bt.Strategy):
 
     params = (
-        ('signal_file', ''),
         ('security', ''),
     )
 
     def __init__(self):
-        self.df = pd.read_csv(self.params.signal_file)
-        self.df['date'] = pd.to_datetime(self.df['date'])
+        self.model = PredictionModelFactory.create_default(seq_len)
+        self.all_prices = MarketDataSource().get_stock_data_basic(self.params.security)
+        weight_file = self.params.security + '_trained_reg.h5'
+        self.model.model.load_weights(weight_file)
 
     def log(self, txt, dt=None):
         ''' Logging function for this strategy'''
@@ -60,17 +64,17 @@ class MySimpleStrategy(bt.Strategy):
         # self.sell()
         position = self.getpositionbyname(self.params.security)
         date = self.datas[0].datetime.date(0)
-        filtered = self.df[self.df["date"] == date]
-        if len(filtered) == 0:
-            return
-        hold = filtered.iloc[0]["Result-0"]
-        buy = filtered.iloc[0]["Result-1"]
-        sell = filtered.iloc[0]["Result-2"]
+        date = datetime.combine(date, datetime.min.time())
+        filtered = self.all_prices[self.all_prices.index <= date].copy()
+        market_data = MarketData(self.params.security, filtered, ma=[50, 100, 200])
+        total_days = 5
+        prices = self.model.predict_days(market_data, total_days)
+        last_price = prices[-1]
 
-        if buy > 0.5 and position.size == 0:
+        if last_price > (self.data.close[0] * 1.02) and position.size == 0:
             self.log('BUY CREATE, %.2f' % self.data.close[0])
             self.buy(price=self.data.close[0], size=400)
-        elif sell > 0.5 and position.size > 0:
+        elif (last_price * 1.02) <= self.data.close[0] and position.size > 0:
             self.log('SELL CREATE, %.2f' % self.data.close[0])
             self.sell(price=self.data.close[0], size=position.size)
 
@@ -79,7 +83,7 @@ if __name__ == '__main__':
     cerebro = bt.Cerebro()
 
     # Add a strategy
-    cerebro.addstrategy(MySimpleStrategy, signal_file='result.csv', security="AMD")
+    cerebro.addstrategy(MySimpleStrategy, security="AMD")
 
     cerebro.broker.setcash(10000.0)
     print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())

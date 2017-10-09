@@ -16,6 +16,7 @@ from DataProcessing import DataProcessing
 class PredictionModel(object):
 
     def __init__(self, shape, neurons, dropout, decay):
+        self.seq_len = shape[0]
         model = Sequential()
 
         model.add(LSTM(neurons[0], input_shape=(shape[0], shape[1]), return_sequences=True))
@@ -80,3 +81,25 @@ class PredictionModel(object):
 
             percentage_diff.append((pr - y_test[u] / pr) * 100)
         return p
+
+    def predict_days(self, data, total_days):
+        prices = []
+        for i in range(total_days):
+            df = data.get_stock_data()
+            x_data, y_data = DataProcessing.load_data(df, self.seq_len)
+            predicted = self.predict_index(x_data, -1)
+            price = data.denormalize('Adj Close', np.array([predicted]))
+            prices.append(price)
+            data.insert_value(price)
+        return prices
+
+
+class PredictionModelFactory(object):
+
+    @staticmethod
+    def create_default(seq_len):
+        neurons =[256, 256, 32, 1]
+        dropout = 0.3
+        decay = 0.5
+        shape = [seq_len, 9, 1]
+        return PredictionModel(shape, neurons, dropout, decay)

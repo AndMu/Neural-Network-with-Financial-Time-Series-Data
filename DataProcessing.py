@@ -5,7 +5,7 @@ class DataProcessing(object):
     @staticmethod
     def load_data(stock, seq_len):
         amount_of_features = len(stock.columns)
-        print ("Amount of features = {}".format(amount_of_features))
+        # print ("Amount of features = {}".format(amount_of_features))
         data = stock.as_matrix()
         sequence_length = seq_len + 1  # index starting from 0
         result = []
@@ -14,7 +14,7 @@ class DataProcessing(object):
             result.append(data[index: index + sequence_length])  # index : index + 22days
 
         result = np.array(result)
-        print ("Amount of data = {}".format(result.shape[0]))
+        # print ("Amount of data = {}".format(result.shape[0]))
 
         x = result[:, :-1]  # all data until day m
         y = result[:, -1][:, -1]  # day m + 1 adjusted close price

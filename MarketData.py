@@ -3,14 +3,15 @@ from datetime import timedelta
 import quandl
 from sklearn import preprocessing
 import pandas as pd
+quandl.ApiConfig.api_key = 'XH28RzhxDVHKWwnaN1Hv'
 
 
 class MarketData(object):
 
-    def __init__(self, stock_name, ma=[]):
+    def __init__(self, stock_name, df, ma=[]):
         self.scalers = {}
         self.stock_name = stock_name,
-        self.df = self.get_stock_data_basic()
+        self.df = df
         self.ma = ma
 
     def get_stock_data(self, normalize=True):
@@ -58,16 +59,20 @@ class MarketData(object):
         df[name] = min_max_scaler.fit_transform(values)
 
     def denormalize(self, name, normalized_value):
+        array_data = normalized_value.reshape(-1, 1)
         min_max_scaler = self.scalers[name]
-        new = min_max_scaler.inverse_transform(normalized_value)
+        new = min_max_scaler.inverse_transform(array_data)
         return new
 
-    def get_stock_data_basic(self):
+
+class MarketDataSource(object):
+
+    def get_stock_data_basic(self, stock_name):
         """
                 Return a dataframe of that stock and normalize all the values.
                 (Optional: create moving average)
                 """
-        df = quandl.get_table('WIKI/PRICES', ticker=self.stock_name)
+        df = quandl.get_table('WIKI/PRICES', ticker=stock_name)
         df.drop(['ticker', 'open', 'high', 'low', 'close', 'ex-dividend', 'volume', 'split_ratio'], 1, inplace=True)
         df.set_index('date', inplace=True)
 
