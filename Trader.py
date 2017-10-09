@@ -71,10 +71,10 @@ class MySimpleStrategy(bt.Strategy):
         prices = self.model.predict_days(market_data, total_days)
         last_price = prices[-1]
 
-        if last_price > (self.data.close[0] * 1.02) and position.size == 0:
+        if last_price > (self.data.close[0] * 1.01):
             self.log('BUY CREATE, %.2f' % self.data.close[0])
             self.buy(price=self.data.close[0], size=400)
-        elif (last_price * 1.02) <= self.data.close[0] and position.size > 0:
+        elif (last_price * 1.01) <= self.data.close[0]:
             self.log('SELL CREATE, %.2f' % self.data.close[0])
             self.sell(price=self.data.close[0], size=position.size)
 
@@ -82,15 +82,16 @@ class MySimpleStrategy(bt.Strategy):
 if __name__ == '__main__':
     cerebro = bt.Cerebro()
 
+    stock = "AAPL"
     # Add a strategy
-    cerebro.addstrategy(MySimpleStrategy, security="AMD")
+    cerebro.addstrategy(MySimpleStrategy, security=stock)
 
     cerebro.broker.setcash(10000.0)
     print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
     cerebro.broker.setcommission(commission=0.001)
 
     data = bt.feeds.Quandl(
-        dataname='AMD',
+        dataname=stock,
         apikey='XH28RzhxDVHKWwnaN1Hv',
         fromdate=datetime(2017, 1, 1),
         todate=last_date)
