@@ -1,7 +1,7 @@
 class HeaderFactory(object):
     Columns = ["Open", "High", "Low", "Close", "Volume"]
     Index = 'Index'
-    Price = 'Price'
+    Price = 'Adj Close'
     Order = 'Order'
     Shares = 'Shares'
     BUY = 'BUY'

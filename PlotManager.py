@@ -20,8 +20,6 @@ class PlotManager(object):
     def plot_result(data, normalized_value_p, normalized_value_y_test):
         newp = data.denormalize('Adj Close', normalized_value_p)
         newy_test = data.denormalize('Adj Close', normalized_value_y_test)
-        print("Last five days price:", newy_test[-5:])
-        print("Last five days prediction + future:", newp[-6:])
         plt2.plot(newp, color='red', label='Prediction')
         plt2.plot(newy_test, color='blue', label='Actual')
         plt2.legend(loc='best')

@@ -4,8 +4,8 @@ import logging
 import pandas as pd
 import talib
 
-from Analysis.Analysis import TechnicalPerformance
-from Analysis.Definitions import HeaderFactory
+from Analysis import TechnicalPerformance
+from Definitions import HeaderFactory
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,6 @@ class RsiIndicator(Indicator):
 
     def calculate(self, data):
         data = pd.DataFrame(data[HeaderFactory.Price])
-        data.to_csv("data.csv")
         rsi = data.apply(RsiIndicator._RSI, axis=0)
         rsi /= 100
         data = rsi[HeaderFactory.Price]

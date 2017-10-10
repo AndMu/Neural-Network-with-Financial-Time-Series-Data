@@ -1,6 +1,7 @@
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 
+from AnalysisPackage.Indicators import CombinedIndicator, MomentumIndicator, BollingerIndicator, RsiIndicator
 from DataProcessing import DataProcessing
 from MarketData import MarketData, MarketDataSource
 from PlotManager import PlotManager
@@ -12,14 +13,15 @@ import quandl
 quandl.ApiConfig.api_key = 'XH28RzhxDVHKWwnaN1Hv'
 seq_len = 22
 
-predict_days = 50
+predict_days = 5
 plot_days = 30
-stock_name = 'AAPL'
-load = True
+stock_name = 'TSLA'
+load = False
 weight_file = stock_name + '_trained_reg.h5'
 df = MarketDataSource().get_stock_data_basic(stock_name)
-df = df.loc[df.index < '2012-04-28', :].copy()
-data = MarketData(stock_name, df, ma=[50, 100, 200])
+df = df.loc[df.index < '2017-01-01', :].copy()
+indicators = CombinedIndicator((MomentumIndicator(), BollingerIndicator(), RsiIndicator()))
+data = MarketData(stock_name, df, ma=[50, 100, 200], indicator=indicators)
 # plot_stock(df)
 #
 # corr = df.corr()

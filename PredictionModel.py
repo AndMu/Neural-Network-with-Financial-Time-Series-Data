@@ -101,5 +101,5 @@ class PredictionModelFactory(object):
         neurons =[256, 256, 32, 1]
         dropout = 0.3
         decay = 0.5
-        shape = [seq_len, 9, 1]
+        shape = [seq_len, 12, 1]
         return PredictionModel(shape, neurons, dropout, decay)

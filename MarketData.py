@@ -8,11 +8,12 @@ quandl.ApiConfig.api_key = 'XH28RzhxDVHKWwnaN1Hv'
 
 class MarketData(object):
 
-    def __init__(self, stock_name, df, ma=[]):
+    def __init__(self, stock_name, df, ma=[], indicator=None):
         self.scalers = {}
         self.stock_name = stock_name,
         self.df = df
         self.ma = ma
+        self.indicator = indicator
 
     def get_stock_data(self, normalize=True):
         df = self.df.copy()
@@ -23,6 +24,12 @@ class MarketData(object):
         if self.ma != []:
             for moving in self.ma:
                 df['{}ma'.format(moving)] = df['Adj Close'].rolling(window=moving).mean()
+
+        indicator_columns = []
+        if self.indicator is not None:
+            df_signal = self.indicator.calculate(df)
+            df = df.join(df_signal)
+            indicator_columns = list(df_signal.columns.values)
 
         df.dropna(inplace=True)
         if normalize:
@@ -37,6 +44,9 @@ class MarketData(object):
                     name = '{}ma'.format(moving)
                     self.normalize_value(df, name)
 
+            for signal in indicator_columns:
+                self.normalize_value(df, signal)
+
                     # Move Adj Close to the rightmost for the ease of training
         adj_close = df['Adj Close']
         df.drop(labels=['Adj Close'], axis=1, inplace=True)
@@ -49,8 +59,8 @@ class MarketData(object):
         self.df.ix[last_date] = self.df.ix[self.df.index[-1]]
         self.df.ix[last_date]['Adj Close'] = price
         self.df.ix[last_date]['Open'] = price
-        self.df.ix[last_date]['High'] = price
-        self.df.ix[last_date]['Low'] = price
+        self.df.ix[last_date]['High'] = price * 1.005
+        self.df.ix[last_date]['Low'] = price * 0.995
 
     def normalize_value(self, df, name):
         values = df[name].values.reshape(-1, 1)
